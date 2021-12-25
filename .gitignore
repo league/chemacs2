@@ -1,1 +1,5 @@
 eln-cache
+/.direnv/
+/.envrc
+/result
+*.qcow2
