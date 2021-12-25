@@ -22,21 +22,22 @@
       homeModule = import ./chemacs.nix;
 
       # User profiles for testing features.
-      homeConfigurations = lib.mapAttrs (name: test:
+      homeConfigurations = lib.mapAttrs (username: test:
         home-manager.lib.homeManagerConfiguration {
-          username = name;
+          inherit username;
           configuration = test.config;
           system = "x86_64-linux";
           pkgs = pkgs.x86_64-linux;
-          homeDirectory = "/home/${name}";
+          homeDirectory = "/home/${username}";
           extraModules = [ self.homeModule ];
           extraSpecialArgs = { hmPath = home-manager.outPath; };
         }) testUsers;
 
       # All test configurations should have buildable activation packages.
-      checks.x86_64-linux = lib.mapAttrs (name: test:
+      checks.x86_64-linux = lib.mapAttrs (name:
         let hm = self.homeConfigurations.${name}.activationPackage;
-        in if test ? script then
+        in test:
+        if test ? script then
           pkgs.x86_64-linux.runCommand name { } ''
             source "${tests/assertions.sh}"
             hf="${hm}/home-files"

@@ -152,7 +152,7 @@ in {
             Allows overriding packages within the Emacs package set.
           '';
           type = lib.hm.types.overlayFunction;
-          default = self: super: { };
+          default = _self: _super: { };
         };
 
         options.deps = lib.mkOption {
@@ -196,7 +196,6 @@ in {
       list = sep: xs: "(" + lib.concatStringsSep sep xs + ")";
       alist = sep: bind: attrs: list sep (lib.mapAttrsToList bind attrs);
       nl = indent: "\n" + lib.fixedWidthString indent " " "";
-      listStr = xs: list (nl 11) (map str xs);
       relTo = dir: path:
         str (if lib.hasPrefix "/" path || lib.hasPrefix "~" path then
           path
@@ -240,14 +239,14 @@ in {
 
     # Install profile init files, if specified.
     {
-      home.file = lib.mapAttrs' (name: profile:
+      home.file = lib.mapAttrs' (_: profile:
         lib.nameValuePair "${profile.userDir}/early-init.el"
         profile.earlyInitFile)
         (lib.filterAttrs (_: p: p.earlyInitFile != null) cfg.chemacs.profiles);
     }
 
     {
-      home.file = lib.mapAttrs' (name: profile:
+      home.file = lib.mapAttrs' (_: profile:
         lib.nameValuePair "${profile.userDir}/init.el" profile.initFile)
         (lib.filterAttrs (_: p: p.initFile != null) cfg.chemacs.profiles);
     }
