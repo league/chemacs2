@@ -21,6 +21,8 @@
     assertFileContains "$hf/.emacs-profiles.el" "basil"
     assertFileContains "$hf/.emacs-profiles.el" "(straight-p . t)"
     assertFileContains "$hf/.emacs-profiles.el" ".emacs-profiles/snow"
+
+    assertFileExists   "$hp/bin/git"
   '';
 
 }

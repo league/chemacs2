@@ -267,5 +267,13 @@ in {
         '';
     })
 
+    # If any profiles enable straight package manager, we'll also enable git at
+    # the home level — otherwise the straight boostrap gives up. I considered
+    # trying to set an exec-path containing git within the emacs profile, but
+    # it's simpler to enable it for the user as a whole (who will probably want
+    # git anyway).
+    (lib.mkIf (lib.any (profile: profile.straight.enable)
+      (lib.attrValues cfg.chemacs.profiles)) { programs.git.enable = true; })
+
   ]);
 }

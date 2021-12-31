@@ -15,5 +15,7 @@
     assertEmacsParse   "$hf/.emacs-profiles.el"
     assertFileContains "$hf/.emacs-profiles.el" "/home/basic/.emacs-profiles/default"
     assertFileContains "$hf/.emacs-profiles/default/init.el" "message"
+
+    assertFileDoesntExist "$hp/bin/git"
   '';
 }
