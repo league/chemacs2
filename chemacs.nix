@@ -209,6 +209,7 @@ in {
       '';
       # Helper functions to convert nix values and attrs to elisp.
       str = s: ''"'' + lib.escape [ "\\" ''"'' ] s + ''"'';
+      toStr = x: str (toString x);
       bool = p: if p then "t" else "nil";
       cons = x: y: "(${x} . ${y})";
       consStr = x: y: cons (str x) (str y);
@@ -229,7 +230,7 @@ in {
           server-name = mapIf str profile.serverName;
           env = mapIf (alist (nl 11) consStr) profile.env;
           straight-p = mapIf bool profile.straight.enable;
-          nix-elisp-bundle = mapIf str (toString profile.deps);
+          nix-elisp-bundle = mapIf toStr profile.deps;
         }));
     in {
       programs.emacs.earlyInitFile.text = ''

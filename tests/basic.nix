@@ -16,6 +16,8 @@
     assertFileContains "$hf/.emacs-profiles.el" "/home/basic/.emacs-profiles/default"
     assertFileContains "$hf/.emacs-profiles/default/init.el" "message"
 
+    assertFileDoesntContain "$hf/.emacs-profiles.el" "nix-elisp-bundle"
+
     assertFileDoesntExist "$hp/bin/git"
   '';
 }

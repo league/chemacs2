@@ -34,3 +34,9 @@ function assertFileContains() {
         fail "Expected $1 to contain $2 but it did not."
     fi
 }
+
+function assertFileDoesntContain() {
+    if grep -qF "$2" "$1"; then
+        fail "Expected $1 not to contain $2 but it did."
+    fi
+}
