@@ -147,6 +147,13 @@ in {
           default = null;
         };
 
+        options.packagesFromUsePackage = {
+          enable = lib.mkEnableOption
+            "selecting packages by parsing use-package declarations in ‘initFile’";
+          alwaysEnsure =
+            lib.mkEnableOption "emulation of ‘use-package-always-ensure’";
+        };
+
         options.overrides = lib.mkOption {
           description = ''
             Allows overriding packages within the Emacs package set.
@@ -157,11 +164,25 @@ in {
 
         options.deps = lib.mkOption {
           type = with lib.types; nullOr package;
-          default = if config.extraPackages == null then
-            null
-          else
+          default = if config.packagesFromUsePackage.enable then
+            (pkgs.emacsWithPackagesFromUsePackage {
+              config = if config.initFile.text != null then
+                config.initFile.text
+              else
+                builtins.readFile config.initFile.source;
+              package = cfg.package;
+              extraEmacsPackages = if config.extraPackages != null then
+                config.extraPackages
+              else
+                ep: [ ];
+              override = epkgs: epkgs.overrideScope' config.overrides;
+              alwaysEnsure = config.packagesFromUsePackage.alwaysEnsure;
+            }).deps
+          else if config.extraPackages != null then
             (((pkgs.emacsPackagesFor cfg.package).overrideScope'
-              config.overrides).withPackages config.extraPackages).deps;
+              config.overrides).withPackages config.extraPackages).deps
+          else
+            null;
         };
 
       });

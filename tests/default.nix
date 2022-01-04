@@ -7,4 +7,5 @@
   packages = import ./packages.nix;
   native-comp = import ./native-comp.nix;
   overrides = import ./overrides.nix;
+  usepackage = import ./usepackage.nix;
 }
