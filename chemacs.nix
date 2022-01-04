@@ -174,7 +174,7 @@ in {
               extraEmacsPackages = if config.extraPackages != null then
                 config.extraPackages
               else
-                ep: [ ];
+                _: [ ];
               override = epkgs: epkgs.overrideScope' config.overrides;
               alwaysEnsure = config.packagesFromUsePackage.alwaysEnsure;
             }).deps

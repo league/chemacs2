@@ -1,14 +1,12 @@
 # Set overrides for emacs packages
 {
-  config = { pkgs, ... }: {
+  config = {
     programs.emacs = {
       enable = true;
       chemacs.profiles.default = {
         # We ask for avy-zap, but actually redirect that to rainbow-mode.
         extraPackages = ep: [ ep.avy-zap ];
-        overrides = self: super: {
-          avy-zap = super.elpaPackages.rainbow-mode;
-        };
+        overrides = _: super: { avy-zap = super.elpaPackages.rainbow-mode; };
         initFile.text = ''
           (add-hook 'prog-mode-hook #'rainbow-mode)
         '';

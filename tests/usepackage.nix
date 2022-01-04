@@ -1,14 +1,12 @@
 # Parse use-package declarations
 {
-  config = { pkgs, ... }: {
+  config = {
     programs.emacs = {
       enable = true;
       chemacs.profiles.default = {
         extraPackages = ep: [ ep.rainbow-mode ep.fake-package-proxy ];
         packagesFromUsePackage.enable = true;
-        overrides = self: super: {
-          fake-package-proxy = super.ace-window;
-        };
+        overrides = _: super: { fake-package-proxy = super.ace-window; };
         initFile.text = ''
           (setq initial-scratch-message
             ";; This is #31f9ab meant to demonstrate #9aa1c0 rainbow-mode\n\n")
