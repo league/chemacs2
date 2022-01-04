@@ -6,4 +6,5 @@
   various = import ./various.nix;
   packages = import ./packages.nix;
   native-comp = import ./native-comp.nix;
+  overrides = import ./overrides.nix;
 }

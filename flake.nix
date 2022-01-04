@@ -1,5 +1,6 @@
 {
-  description = "";
+  description =
+    "Configure multiple emacs profiles with nix, home-manager, and chemacs.";
 
   inputs.home-manager.url = "github:nix-community/home-manager";
   inputs.emacs-overlay.url =
