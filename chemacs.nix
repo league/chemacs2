@@ -3,6 +3,27 @@ let
   cfg = config.programs.emacs;
   inherit (config) xdg;
   inherit (config.home) homeDirectory;
+  inherit (config.home) username;
+
+  # Helper functions to convert nix values and attrs to elisp.
+  elisp = rec {
+    str = s: ''"'' + lib.escape [ "\\" ''"'' ] s + ''"'';
+    toStr = x: str (toString x);
+    bool = p: if p then "t" else "nil";
+    cons = x: y: "(${x} . ${y})";
+    consStr = x: y: cons (str x) (str y);
+    truthy = x: x != null && x != [ ] && x != { } && x != false;
+    mapIf = f: x: lib.optionals (truthy x) (f x);
+    list = sep: xs: "(" + lib.concatStringsSep sep xs + ")";
+    alist = sep: bind: attrs: list sep (lib.mapAttrsToList bind attrs);
+    relTo = dir: path:
+      if lib.hasPrefix "/" path || lib.hasPrefix "~" path then
+        path
+      else
+        dir + "/" + path;
+    relToStr = dir: path: str (relTo dir path);
+    nl = indent: "\n" + lib.fixedWidthString indent " " "";
+  };
 
   # This is a cut-down version of the file-type submodule in home-manager. That
   # one must be bound as an attribute set, like ‘home.file.NAME’. Here, the NAME
@@ -163,6 +184,13 @@ in {
         };
 
         options.deps = lib.mkOption {
+          description = ''
+            An emacs dependencies bundle, produced by withPackages.
+            This is meant to be read-only. The default bundle is constructed
+            from ‘packagesFromUsePackage’, ‘extraPackages’, and/or ‘overrides’.
+            Parsing use-package declarations assumes the nix-community
+            emacs-overlay has been applied.
+          '';
           type = with lib.types; nullOr package;
           default = if config.packagesFromUsePackage.enable then
             (pkgs.emacsWithPackagesFromUsePackage {
@@ -183,6 +211,51 @@ in {
               config.overrides).withPackages config.extraPackages).deps
           else
             null;
+        };
+
+        options.lisp = lib.mkOption {
+          description = ''
+            An S-expression containing chemacs settings for this profile. Meant
+            to be read-only.
+          '';
+          default = break:
+            with elisp;
+            alist (break 3) cons (lib.filterAttrs (_: truthy) {
+              user-emacs-directory = relToStr homeDirectory config.userDir;
+              custom-file = mapIf (relToStr config.userDir) config.customFilePath;
+              server-name = mapIf str config.serverName;
+              env = mapIf (alist (break 11) consStr) config.env;
+              straight-p = mapIf bool config.straight.enable;
+              nix-elisp-bundle = mapIf toStr config.deps;
+            });
+        };
+
+        options.run = lib.mkOption {
+          description = ''
+            A script to run emacs with this profile in a temporary directory.
+            Unlike running in a VM, this emacs will have access to your home
+            directory, and can read/write files there. The temporary directory
+            persists in /tmp until removed (just like the VM image persists).
+            For this to work, you must already have our version of the chemacs2
+            init files linked into your real home emacs directory. If you don't
+            have that yet, stick to testing in a VM.
+          '';
+          type = lib.types.package;
+          default = let
+            ename = "emacs-${username}-${name}";
+            tmp = "/tmp/nix-${ename}";
+          in pkgs.writeShellScript ename ''
+            mkdir -p "${tmp}"
+            ${lib.optionalString (config.earlyInitFile != null)
+            ''ln -sf "${config.earlyInitFile.source}" "${tmp}/early-init.el"''}
+            ${lib.optionalString (config.initFile != null)
+            ''ln -sf "${config.initFile.source}" "${tmp}/init.el"''}
+            exec ${cfg.package}/bin/emacs --with-profile='${
+              builtins.replaceStrings
+              [ (elisp.relTo homeDirectory config.userDir) ] [ tmp ]
+              (config.lisp (_: " "))
+            }' "$@"
+          '';
         };
 
       });
@@ -207,31 +280,6 @@ in {
         ${noteGenerated}
         (require 'chemacs "${./chemacs.el}")
       '';
-      # Helper functions to convert nix values and attrs to elisp.
-      str = s: ''"'' + lib.escape [ "\\" ''"'' ] s + ''"'';
-      toStr = x: str (toString x);
-      bool = p: if p then "t" else "nil";
-      cons = x: y: "(${x} . ${y})";
-      consStr = x: y: cons (str x) (str y);
-      truthy = x: x != null && x != [ ] && x != { } && x != false;
-      mapIf = f: x: lib.optionals (truthy x) (f x);
-      list = sep: xs: "(" + lib.concatStringsSep sep xs + ")";
-      alist = sep: bind: attrs: list sep (lib.mapAttrsToList bind attrs);
-      nl = indent: "\n" + lib.fixedWidthString indent " " "";
-      relTo = dir: path:
-        str (if lib.hasPrefix "/" path || lib.hasPrefix "~" path then
-          path
-        else
-          dir + "/" + path);
-      toLisp = name: profile:
-        cons (str name) (nl 2 + alist (nl 3) cons (lib.filterAttrs (_: truthy) {
-          user-emacs-directory = relTo homeDirectory profile.userDir;
-          custom-file = mapIf (relTo profile.userDir) profile.customFilePath;
-          server-name = mapIf str profile.serverName;
-          env = mapIf (alist (nl 11) consStr) profile.env;
-          straight-p = mapIf bool profile.straight.enable;
-          nix-elisp-bundle = mapIf toStr profile.deps;
-        }));
     in {
       programs.emacs.earlyInitFile.text = ''
         ${requireChemacs}
@@ -244,9 +292,10 @@ in {
         ;; (package-initialize)
       '';
 
-      home.file.${profilesPath}.text = ''
+      home.file.${profilesPath}.text = with elisp; ''
         ${noteGenerated}
-        ${alist (nl 1) toLisp cfg.chemacs.profiles}
+        ${alist (nl 1) (name: profile: cons (str name) (nl 2 + profile.lisp nl))
+        cfg.chemacs.profiles}
       '';
     }))
 

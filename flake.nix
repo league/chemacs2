@@ -81,6 +81,16 @@
         ];
       };
 
+      # Create run scripts for each test configuration.
+      apps.x86_64-linux = lib.listToAttrs (lib.concatLists (lib.mapAttrsToList
+        (username: home:
+          lib.mapAttrsToList (name: profile: {
+            name = "${username}-${name}";
+            value.type = "app";
+            value.program = toString profile.run;
+          }) home.config.programs.emacs.chemacs.profiles)
+        self.homeConfigurations));
+
       # Developer should have access to nix tools and home-manager executable.
       devShell = lib.genAttrs systems (system:
         let ps = pkgs.${system};
