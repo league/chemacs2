@@ -3,3 +3,4 @@ eln-cache
 /.envrc
 /result
 *.qcow2
+/.pre-commit-config.yaml

@@ -4,49 +4,56 @@
 
   inputs.home-manager.url = "github:nix-community/home-manager";
   inputs.emacs-overlay.url = "github:nix-community/emacs-overlay";
+  inputs.pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
 
-  outputs = inputs@{ self, home-manager, ... }:
+  outputs = inputs@{ self, home-manager, pre-commit-hooks, ... }:
     let
-      systems = [ "x86_64-linux" ];
+      eachSystem = lib.genAttrs [ "x86_64-linux" "x86_64-darwin" ];
       inherit (home-manager.inputs) nixpkgs;
       inherit (nixpkgs) lib;
       testUsers = import ./tests;
-      pkgs = lib.genAttrs systems (system:
+      pkgs = eachSystem (system:
         import nixpkgs {
           inherit system;
           overlays = [ inputs.emacs-overlay.overlay ];
         });
     in {
-      inherit pkgs;
-
       homeModule = import ./chemacs.nix;
 
       # User profiles for testing features.
-      homeConfigurations = lib.mapAttrs (username: test:
-        home-manager.lib.homeManagerConfiguration {
-          inherit username;
-          configuration = test.config;
-          system = "x86_64-linux";
-          pkgs = pkgs.x86_64-linux;
-          homeDirectory = "/home/${username}";
-          extraModules = [ self.homeModule ];
-          extraSpecialArgs = { hmPath = home-manager.outPath; };
-        }) testUsers;
+      homeConfigurations = eachSystem (system:
+        lib.mapAttrs (username: test:
+          home-manager.lib.homeManagerConfiguration {
+            inherit system username;
+            configuration = test.config;
+            pkgs = pkgs.${system};
+            homeDirectory = "/home/${username}";
+            extraModules = [ self.homeModule ];
+            extraSpecialArgs = { hmPath = home-manager.outPath; };
+          }) testUsers);
 
       # All test configurations should have buildable activation packages.
-      checks.x86_64-linux = lib.mapAttrs (name:
-        let hm = self.homeConfigurations.${name}.activationPackage;
-        in test:
-        if test ? script then
-          pkgs.x86_64-linux.runCommand name { } ''
-            source "${tests/assertions.sh}"
-            hf="${hm}/home-files"
-            hp="${hm}/home-path"
-            ${test.script}
-            touch "$out"
-          ''
-        else
-          hm) testUsers;
+      checks = eachSystem (system:
+        lib.mapAttrs (name:
+          let hm = self.homeConfigurations.${system}.${name}.activationPackage;
+          in test:
+          if test ? script then
+            pkgs.${system}.runCommand name { } ''
+              source "${tests/assertions.sh}"
+              hf="${hm}/home-files"
+              hp="${hm}/home-path"
+              ${test.script}
+              touch "$out"
+            ''
+          else
+            hm) testUsers // {
+              pre-commit = pre-commit-hooks.lib.${system}.run {
+                src = ./.;
+                hooks.nixfmt.enable = true;
+                hooks.nix-linter.enable = true;
+                hooks.yamllint.enable = true;
+              };
+            });
 
       # Create one NixOS VM containing each test configuration in a separate
       # user account.
@@ -77,24 +84,27 @@
       };
 
       # Create run scripts for each test configuration.
-      apps.x86_64-linux = lib.listToAttrs (lib.concatLists (lib.mapAttrsToList
-        (username: home:
+      apps = eachSystem (system:
+        lib.listToAttrs (lib.concatLists (lib.mapAttrsToList (username: home:
           lib.mapAttrsToList (name: profile: {
             name = "${username}-${name}";
             value.type = "app";
             value.program = toString profile.run;
           }) home.config.programs.emacs.chemacs.profiles)
-        self.homeConfigurations));
+          self.homeConfigurations.${system})));
 
       # Developer should have access to nix tools and home-manager executable.
-      devShell = lib.genAttrs systems (system:
+      devShell = eachSystem (system:
         let ps = pkgs.${system};
         in ps.mkShell {
-          buildInputs = [
-            home-manager.packages.${system}.home-manager
-            ps.nix-linter
-            ps.nixfmt
-          ];
+          inherit (self.checks.${system}.pre-commit) shellHook;
+          buildInputs = [ home-manager.packages.${system}.home-manager ]
+            ++ (with pre-commit-hooks.packages.${system}; [
+              nixfmt
+              nix-linter
+              pre-commit
+              yamllint
+            ]);
         });
     };
 }

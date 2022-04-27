@@ -222,7 +222,8 @@ in {
             with elisp;
             alist (break 3) cons (lib.filterAttrs (_: truthy) {
               user-emacs-directory = relToStr homeDirectory config.userDir;
-              custom-file = mapIf (relToStr config.userDir) config.customFilePath;
+              custom-file =
+                mapIf (relToStr config.userDir) config.customFilePath;
               server-name = mapIf str config.serverName;
               env = mapIf (alist (break 11) consStr) config.env;
               straight-p = mapIf bool config.straight.enable;
