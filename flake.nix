@@ -3,14 +3,13 @@
     "Configure multiple emacs profiles with nix, home-manager, and chemacs.";
 
   inputs.home-manager.url = "github:nix-community/home-manager";
-  inputs.emacs-overlay.url =
-    "github:nix-community/emacs-overlay/23c8464f4527a2b19f6b4776378dd03b8289aa85";
+  inputs.emacs-overlay.url = "github:nix-community/emacs-overlay";
 
   outputs = inputs@{ self, home-manager, ... }:
     let
       systems = [ "x86_64-linux" ];
       inherit (home-manager.inputs) nixpkgs;
-      inherit (home-manager.inputs.nixpkgs) lib;
+      inherit (nixpkgs) lib;
       testUsers = import ./tests;
       pkgs = lib.genAttrs systems (system:
         import nixpkgs {
@@ -61,10 +60,6 @@
             imports = [ "${modulesPath}/virtualisation/qemu-vm.nix" ];
             networking.hostName = "chemacs";
             services.openssh.enable = true;
-            virtualisation.qemu.networkingOptions = [
-              "-net nic,netdev=user.0,model=virtio"
-              ''-netdev user,id=user.0,hostfwd=tcp::7722-:22"$QEMU_NET_OPTS"''
-            ];
             users.users = lib.mapAttrs (_: _: {
               isNormalUser = true;
               inherit initialPassword;

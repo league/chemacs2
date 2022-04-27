@@ -1,11 +1,11 @@
-# Use the emacsGcc branch with some packages.
+# Use the emacsNativeComp branch with some packages.
 {
   config = { pkgs, ... }: {
     xdg.enable = true;
 
     programs.emacs = {
       enable = true;
-      package = pkgs.emacsGcc;
+      package = pkgs.emacsNativeComp;
       chemacs.profiles.default = {
         extraPackages = ep: [ ep.avy-zap ];
         initFile.text = ''
