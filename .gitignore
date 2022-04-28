@@ -1,4 +1,7 @@
 eln-cache
+.cask
+elpa
+auto-save-list
 /.direnv/
 /.envrc
 /result

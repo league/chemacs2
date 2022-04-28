@@ -41,7 +41,7 @@ Think of it as a bootloader for Emacs.
 
 Emacs intialization used to have a single entry point, either =~/.emacs= or
 =~/.emacs.d/init.el=. More recent Emacsen have introduced a second startup
-script, =~/.emacs/early-init.el=, which runs earlier in the boot process, and
+script, =~/.emacs.d/early-init.el=, which runs earlier in the boot process, and
 can be used for things that should happen very early on, like tweaking the GC,
 or disabling UI elements.
 
@@ -99,7 +99,9 @@ below.
 Chemacs adds an extra command line option to Emacs, =--with-profile=. Profiles
 are configured in =~/.emacs-profiles.el=.
 
-If no profile is given at the command line then the =default= profile is used.
+If no profile is given at the command line then the environment variable
+CHEMACS_PROFILE is used. If this environment variables isn't set then the
+=default= profile is used.
 
 #+BEGIN_SRC shell
 $ emacs --with-profile my-profile
@@ -151,8 +153,9 @@ for a helpful script to do that.
 
 ** Changing the default profile (e.g. for GUI editors)
 
-Where it is not possible to use the =--with-profile= flag, the default profile
-can be set using a =~/.emacs-profile= file.
+Where it is not possible to use the =--with-profile= flag or the CHEMACS_PROFILE
+environment variable, the default profile can be set using a =~/.emacs-profile=
+file.
 
 If your =~/.emacs-profiles.el= file contains the following:
 
@@ -223,8 +226,56 @@ Both =~/.emacs-profiles.el= and =~/.emacs-profile= can also be stored under =$XD
 Further, as indicated by the [[http://git.savannah.gnu.org/cgit/emacs.git/tree/etc/NEWS?h=emacs-27][Emacs 27.1 changelog]], Emacs is now compatible with XDG Standards, looking for its configuration files in =${XDG_CONFIG_HOME}/emacs= directory too (provided the traditional =~/.emacs.d= and =~/.emacs= does not exist).
 Therefore, it is perfectly viable to install Chemacs 2 in =${XDG_CONFIG_HOME}/emacs= (usually =~/.config/emacs=) directory - with the aforementioned caveat: _the directory =~/.emacs.d"= and the file ="~/.emacs"= does not exist_.
 
+** Example: emacs as daemon
+- Profiles
+You can add an entry similar to the following to your =.emacs-profiles.el=
+#+BEGIN_SRC emacs-lisp
+;; your custom or vanilla emacs profile
+(("default" . ((user-emacs-directory . "~/.gnu-emacs")
+	       (server-name . "gnu")
+	       ))
+
+;; emacs distribution: DOOM-emacs
+("doom" . ((user-emacs-directory . "~/.doom-emacs")
+	   (server-name . "doom")
+	   (env . (("DOOMDIR" . "~/.doom.d")))
+	     ))
+  )
+#+END_SRC
+
+- daemon
+Set emacs daemon to always run in background
+#+begin_src bash
+# vanilla
+emacs --daemon &
+# Doom emacs
+emacs --with-profile doom --daemon &
+#+end_src
+
+- emacsclient
+create a new frame, connect to the socket and use vanilla emacs as fallback
+#+begin_src bash
+emacsclient -c -s gnu -a emacs
+emacsclient -c -s doom -a emacs
+#+end_src
+
+** Troubleshooting
+
+*** Emacs cannot find packages installed by straight
+Some users have [[https://github.com/plexus/chemacs2/issues/31][reported issues]] where packages installed by `straight.el` can no longer be found after switching to using `chemacs`.
+
+First, make sure you haven't hardcoded filepaths to "emacs.d" in your configuration. You should reference files inside a profile-specific emacs folder like this:
+
+#+begin_src elisp
+(setq some-var (expand-file-name "path/to/file" user-emacs-directory))
+#+END_SRC
+
+Second, if the issue persists you should delete the `build` folder in your `straight` directory and rebuild your dependencies.
+
+If the issue persists please [[https://github.com/plexus/chemacs2/issues/31][comment on the issue]], because we are still trying to figure out the exact source of this problem, but this has solved the problem for some users.
+
 ** LICENSE
 
-Copyright © Arne Brasseur 2018-2020
+Copyright © Arne Brasseur and contributors, 2018-2022
 
 Distributed under the terms of the GPL v3.
