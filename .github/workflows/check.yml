@@ -31,4 +31,4 @@ jobs:
         with:
           name: league
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - run: nix flake check
+      - run: nix --print-build-logs flake check

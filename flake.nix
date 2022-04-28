@@ -76,8 +76,14 @@
             environment.systemPackages = [ pkgs.tree pkgs.kitty.terminfo ];
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.sharedModules =
-              [ self.homeModule { home.stateVersion = "21.05"; } ];
+            home-manager.sharedModules = [
+              self.homeModule
+              {
+                home.stateVersion = "21.05";
+                # https://github.com/nix-community/home-manager/issues/1262
+                manual.manpages.enable = false;
+              }
+            ];
             home-manager.users = lib.mapAttrs (_: test: test.config) testUsers;
           })
         ];
