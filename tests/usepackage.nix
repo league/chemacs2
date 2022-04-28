@@ -25,6 +25,19 @@
         packagesFromUsePackage.alwaysEnsure = true;
         initFile.source = ./usepackage-init.el;
       };
+
+      # Specify an independent initFile just for packages. Here, rainbow-mode
+      # should be available, but initial-scratch-message won't take effect.
+      chemacs.profiles.sideload = {
+        packagesFromUsePackage.enable = true;
+        packagesFromUsePackage.alwaysEnsure = true;
+        packagesFromUsePackage.initFile.text = ''
+          (setq initial-scratch-message
+            ";; This is #c1aa29 meant to demonstrate #abf931 rainbow-mode\n\n")
+          (use-package rainbow-mode
+            :hook lisp-interaction-mode)
+        '';
+      };
     };
   };
 

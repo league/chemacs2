@@ -173,6 +173,15 @@ in {
             "selecting packages by parsing use-package declarations in ‘initFile’";
           alwaysEnsure =
             lib.mkEnableOption "emulation of ‘use-package-always-ensure’";
+          initFile = lib.mkOption {
+            description = ''
+              Content of ‘init.el’ to consult for use-package
+              declarations. Defaults to the installed initFile, but can be
+              independent.
+            '';
+            type = with lib.types; nullOr (fileType "init.el");
+            default = null;
+          };
         };
 
         options.overrides = lib.mkOption {
@@ -194,10 +203,15 @@ in {
           type = with lib.types; nullOr package;
           default = if config.packagesFromUsePackage.enable then
             (pkgs.emacsWithPackagesFromUsePackage {
-              config = if config.initFile.text != null then
-                config.initFile.text
+              config = let
+                init = if config.packagesFromUsePackage.initFile != null then
+                  config.packagesFromUsePackage.initFile
+                else
+                  config.initFile;
+              in if init.text != null then
+                init.text
               else
-                builtins.readFile config.initFile.source;
+                builtins.readFile init.source;
               package = cfg.package;
               extraEmacsPackages = if config.extraPackages != null then
                 config.extraPackages
