@@ -23,7 +23,8 @@
 
   outputs = inputs@{ self, home-manager, pre-commit-hooks, ... }:
     let
-      eachSystem = lib.genAttrs [ "x86_64-linux" "x86_64-darwin" ];
+      eachSystem =
+        lib.genAttrs [ "aarch64-darwin" "x86_64-linux" "x86_64-darwin" ];
       inherit (home-manager.inputs) nixpkgs;
       inherit (nixpkgs) lib;
       testUsers = import ./tests;
