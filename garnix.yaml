@@ -1,0 +1,7 @@
+# garnix.yaml — build config for garnix.io CI
+builds:
+  include:
+    - "checks.x86_64-linux.*"
+    - "checks.aarch64-darwin.*"
+  exclude:
+    []
