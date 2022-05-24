@@ -2,8 +2,6 @@
   description =
     "Configure multiple emacs profiles with nix, home-manager, and chemacs.";
 
-  inputs.emacs-overlay.url = "github:nix-community/emacs-overlay";
-
   # Both home-manager and pre-commit-hooks reference a nixpkgs. If we keep both,
   # things will build but there is duplication that slows down CI. Standardize
   # on the nixpkgs in home-manager, but then we need to pin PCH so it doesn't
@@ -11,10 +9,16 @@
 
   inputs.home-manager.url = "github:nix-community/home-manager";
 
+  inputs.emacs-overlay = {
+    url = "github:nix-community/emacs-overlay";
+    inputs.nixpkgs.follows = "home-manager/nixpkgs";
+  };
+
   inputs.pre-commit-hooks = {
     url =
       "github:cachix/pre-commit-hooks.nix/ff9c0b459ddc4b79c06e19d44251daa8e9cd1746";
     inputs.nixpkgs.follows = "home-manager/nixpkgs";
+    inputs.flake-utils.follows = "emacs-overlay/flake-utils";
   };
 
   outputs = inputs@{ self, home-manager, pre-commit-hooks, ... }:
@@ -77,6 +81,7 @@
           ({ modulesPath, pkgs, ... }: {
             imports = [ "${modulesPath}/virtualisation/qemu-vm.nix" ];
             networking.hostName = "chemacs";
+            system.stateVersion = "22.05";
             services.openssh.enable = true;
             users.users = lib.mapAttrs (_: _: {
               isNormalUser = true;
