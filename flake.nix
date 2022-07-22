@@ -40,11 +40,18 @@
       homeConfigurations = eachSystem (system:
         lib.mapAttrs (username: test:
           home-manager.lib.homeManagerConfiguration {
-            inherit system username;
-            configuration = test.config;
             pkgs = pkgs.${system};
-            homeDirectory = "/home/${username}";
-            extraModules = [ self.homeModule ];
+            modules = [
+              test.config
+              self.homeModule
+              {
+                home = {
+                  inherit username;
+                  homeDirectory = "/home/${username}";
+                  stateVersion = "22.11";
+                };
+              }
+            ];
             extraSpecialArgs = { hmPath = home-manager.outPath; };
           }) testUsers);
 
