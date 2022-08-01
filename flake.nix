@@ -4,8 +4,8 @@
 
   # Both home-manager and pre-commit-hooks reference a nixpkgs. If we keep both,
   # things will build but there is duplication that slows down CI. Standardize
-  # on the nixpkgs in home-manager, but then we need to pin PCH so it doesn't
-  # require tools that are only in bleeding-edge nixpkgs.
+  # on the nixpkgs in home-manager, but we might sometimes need to pin PCH so it
+  # doesn't require tools that are only in bleeding-edge nixpkgs.
 
   inputs.home-manager.url = "github:nix-community/home-manager";
 
@@ -15,8 +15,7 @@
   };
 
   inputs.pre-commit-hooks = {
-    url =
-      "github:cachix/pre-commit-hooks.nix/ff9c0b459ddc4b79c06e19d44251daa8e9cd1746";
+    url = "github:cachix/pre-commit-hooks.nix";
     inputs.nixpkgs.follows = "home-manager/nixpkgs";
     inputs.flake-utils.follows = "emacs-overlay/flake-utils";
   };
