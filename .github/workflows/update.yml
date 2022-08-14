@@ -3,7 +3,7 @@ name: "Update flake inputs"
 "on":
   workflow_dispatch:
   schedule:
-    - cron: '15 2 1 * *'        # @monthly
+    - cron: '15 2 21 * *'        # @monthly on 21st
 jobs:
   update:
     runs-on: ubuntu-latest
